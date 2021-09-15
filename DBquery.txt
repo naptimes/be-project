@@ -1,0 +1,50 @@
+-- create tables
+CREATE TABLE roles(
+    role_id INT PRIMARY KEY,
+    role_description VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE offices(
+    office_id CHAR(5) PRIMARY KEY,
+    office_name VARCHAR(50) NOT NULL,
+    office_location INT NOT NULL
+);
+
+CREATE TABLE users(
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(50) NOT NULL,
+    email VARCHAR(50) UNIQUE NOT NULL,
+    phone_number VARCHAR(20) NOT NULL,
+    password VARCHAR(200) NOT NULL,
+    office_id CHAR(5),
+    role_id INT,
+    auth_token VARCHAR(100),
+    CONSTRAINT `fk_roles_and_offices`
+     FOREIGN KEY(office_id) REFERENCES offices(office_id),
+     FOREIGN KEY(role_id) REFERENCES roles(role_id)
+     ON DELETE CASCADE
+);
+
+CREATE TABLE attendances(
+   attendance_id INT PRIMARY KEY,
+   user_id INT NOT NULL,
+   attendance_status BOOLEAN NOT NULL,
+   checkin TIME NOT NULL,
+   checkout TIME NOT NULL,
+   user_location INT NOT NULL,
+   CONSTRAINT `fk_attendances`
+    FOREIGN KEY(user_id) REFERENCES users(user_id)
+    ON DELETE CASCADE
+);
+
+--buat coba-coba tipe data multipoint sama point
+CREATE TABLE multi_point (g MULTIPOINT);
+INSERT INTO multi_point VALUES
+    (MultiPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)')),
+    (MPointFromText('MULTIPOINT(1 1,11 11,11 21,21 21)'));
+
+CREATE TABLE gis_point  (g POINT);
+SHOW FIELDS FROM gis_point;
+INSERT INTO gis_point VALUES
+    (PointFromText('POINT(10 10)')),
+    (PointFromText('POINT(20 10)'));
