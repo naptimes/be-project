@@ -5,12 +5,12 @@ CREATE TABLE roles(
 );
 
 CREATE TABLE offices(
-    office_id CHAR(5) PRIMARY KEY,
-    office_name VARCHAR(50) NOT NULL,
-    office_location POINT NOT NULL
+    office_id VARCHAR(6) PRIMARY KEY,
+    office_name VARCHAR(50),
+    office_location POINT
 );
 
-CREATE TABLE users(
+CREATE TABLE all_users(
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(50) NOT NULL,
     email VARCHAR(50) UNIQUE NOT NULL,
@@ -33,10 +33,43 @@ CREATE TABLE attendances(
    checkout TIME NOT NULL,
    user_location POINT NOT NULL,
    CONSTRAINT `fk_attendances`
-    FOREIGN KEY(user_id) REFERENCES users(user_id)
+    FOREIGN KEY(user_id) REFERENCES all_users(user_id)
     ON DELETE CASCADE
 );
 
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+INSERT INTO roles VALUES
+(1,"Admin");
+INSERT INTO roles VALUES
+(2,"Employee");
+
+INSERT INTO offices VALUES 
+('IT001','Kantor1',PointFromText('POINT(15.317293 17.129387129)'));
+INSERT INTO offices VALUES 
+('IT002','Kantor2',PointFromText('POINT(15.8 17.129387129)'));
+
+INSERT INTO all_users VALUES
+(1,'John123','John@gmail.com','08781819','john123','IT001',2,'sssfsadf193');
+
+INSERT INTO attendances VALUES
+(1,1,0,'8:0:0','15:0:0',PointFromText('POINT(15.6 17.129387129)'));
+
+SELECT a.office_name AS office, b.full_name AS employee, 
+   111111 *
+    DEGREES(ACOS(LEAST(1.0, COS(RADIANS(X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001')))))
+         * COS(RADIANS(X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1)))))
+         * COS(RADIANS(Y(GeomFromWKB((SELECT office_lo	cation FROM offices WHERE office_id = 'IT001'))) - Y(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1)))))
+         + SIN(RADIANS(X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001')))))
+         * SIN(RADIANS(X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1)))))))) AS distance_in_m
+  FROM offices AS a
+  JOIN all_users AS b ON a.office_id = b.office_id
+  JOIN attendances AS c ON b.user_id = c.user_id
+ WHERE a.office_id = 'IT001' AND b.user_id = 1;
+
+
+SELECT X(GeomFromWKB((SELECT office_location FROM offices))) 'latitude',
+Y(GeomFromWKB((SELECT office_location FROM offices))) 'longitude';
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 --buat coba-coba tipe data point
 CREATE TABLE gis_point  (g POINT);
 SHOW FIELDS FROM gis_point;
