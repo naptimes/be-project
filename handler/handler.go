@@ -15,7 +15,7 @@ const (
 	ContentTypeText   = "text/plain; charset=utf-8"
 )
 
-type User interface {
+type User struct {
 	UserID      int
 	FullName    string
 	Email       string
@@ -29,11 +29,6 @@ type User interface {
 	AuthToken   string
 }
 
-type test interface {
-	Ini int
-	Aku string 
-}
-
 type Timesheet struct {
 }
 
@@ -42,14 +37,18 @@ func LandingPage(c *gin.Context) {
 }
 
 func GetDashboard(c *gin.Context) {
-	user := &User{}
-	c.JSON(http.StatusOK, ContentTypeJSON, user)
+	user := &User{UserID: 123, Email: "test@mail.com", Password: "123Empat%", FullName: "testing satu dua tiga"}
+	c.JSON(http.StatusOK, user)
 }
 
 func GetTimesheet(c *gin.Context) {
-	c.JSON(http.StatusOK, ContentTypeJSON)
+	c.JSON(http.StatusOK, gin.H{
+		"testing": 123,
+	})
 }
 
-func getAdministration(c *gin.Context) {
-	c.JSON(http.StatusOK, ContentTypeJSON)
+func GetAdministration(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"aku": "orang",
+	})
 }
