@@ -29,6 +29,22 @@ type User struct {
 	AuthToken   string
 }
 
+type Respawns struct {
+	Status  int       `json:"status"`
+	Message string    `json:"message"`
+	Data    Dashboard `json:"data"`
+}
+
+type Dashboard struct {
+	FullName        string  `json:"full_name"`
+	Role            string  `json:"role"`
+	OfficeLongitude float32 `json:"office_longitude"`
+	OfficeLatitude  float32 `json:"office_latitude"`
+	CurrentDate     string  `json:"current_date"`
+	UserLongitude   float32 `json:"user_longitude"`
+	UserLatitude    float32 `json:"user_latitude"`
+}
+
 type Timesheet struct {
 }
 
@@ -37,8 +53,10 @@ func LandingPage(c *gin.Context) {
 }
 
 func GetDashboard(c *gin.Context) {
-	user := &User{UserID: 123, Email: "test@mail.com", Password: "123Empat%", FullName: "testing satu dua tiga"}
-	c.JSON(http.StatusOK, user)
+	// collect from db
+	data := &Respawns{} // not yet
+
+	c.JSON(http.StatusOK, data)
 }
 
 func GetTimesheet(c *gin.Context) {
