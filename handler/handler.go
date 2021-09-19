@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// template
 const (
 	ContentTypeBinary = "application/octet-stream"
 	ContentTypeForm   = "application/x-www-form-urlencoded"
