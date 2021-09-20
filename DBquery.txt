@@ -7,10 +7,11 @@ CREATE TABLE roles(
 CREATE TABLE offices(
     office_id VARCHAR(6) PRIMARY KEY,
     office_name VARCHAR(50),
-    office_location POINT
+    office_latitude FLOAT,
+    office_longitude FLOAT
 );
 
-CREATE TABLE all_users(
+CREATE TABLE users(
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(50) NOT NULL,
     email VARCHAR(50) UNIQUE NOT NULL,
@@ -31,12 +32,31 @@ CREATE TABLE attendances(
    attendance_status BOOLEAN NOT NULL,
    checkin TIME NOT NULL,
    checkout TIME NOT NULL,
-   user_location POINT NOT NULL,
+   dates DATE NOT NULL,
+   user_latitude FLOAT,
+   user_longitude FLOAT,
    CONSTRAINT `fk_attendances`
-    FOREIGN KEY(user_id) REFERENCES all_users(user_id)
+    FOREIGN KEY(user_id) REFERENCES users(user_id)
     ON DELETE CASCADE
 );
 
+CREATE TABLE books2(
+   bukuid INT PRIMARY KEY,
+   bukujudul varchar(12) NOT NULL
+);
+
+DROP TABLE attendances;
+DROP TABLE users;
+DROP TABLE offices;
+
+SELECT full_name, role_description, office_longitude, office_latitude, dates, user_longitude, user_latitude  
+  FROM users AS a
+  JOIN roles AS b ON a.role_id = b.role_id
+  JOIN offices AS c ON a.office_id = c.office_id
+  JOIN attendances AS d ON a.user_id = d.user_id 
+ WHERE a.user_id = 1
+ LIMIT 1 
+ ORDER BY d.dates DESC;
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 INSERT INTO roles VALUES
 (1,"Admin");
@@ -44,21 +64,23 @@ INSERT INTO roles VALUES
 (2,"Employee");
 
 INSERT INTO offices VALUES 
-('IT001','Kantor1',PointFromText('POINT(15.317293 17.129387129)'));
+('IT001','Kantor1',15.838282, -2.3838922);
 INSERT INTO offices VALUES 
 ('IT002','Kantor2',PointFromText('POINT(15.8 17.129387129)'));
 
-INSERT INTO all_users VALUES
+INSERT INTO users VALUES
 (1,'John123','John@gmail.com','08781819','john123','IT001',2,'sssfsadf193');
 
 INSERT INTO attendances VALUES
-(1,1,0,'8:0:0','15:0:0',PointFromText('POINT(15.6 17.129387129)'));
+(1,1,0,'8:0:0','15:0:0','2021-09-20',15.80001, -2.383891);
+INSERT INTO attendances VALUES
+(2,1,0,'8:0:0','15:0:0','2021-09-21',15.80001, -2.383891);
 
 SELECT a.office_name AS office, b.full_name AS employee, 
    111111 *
     DEGREES(ACOS(LEAST(1.0, COS(RADIANS(X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001')))))
          * COS(RADIANS(X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1)))))
-         * COS(RADIANS(Y(GeomFromWKB((SELECT office_lo	cation FROM offices WHERE office_id = 'IT001'))) - Y(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1)))))
+         * COS(RADIANS(Y(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001'))) - Y(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1)))))
          + SIN(RADIANS(X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001')))))
          * SIN(RADIANS(X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1)))))))) AS distance_in_m
   FROM offices AS a
@@ -66,15 +88,48 @@ SELECT a.office_name AS office, b.full_name AS employee,
   JOIN attendances AS c ON b.user_id = c.user_id
  WHERE a.office_id = 'IT001' AND b.user_id = 1;
 
+SELECT full_name, role_description, office_longitude, office_latitude, dates, user_longitude, user_latitude  
+  FROM users AS a
+  JOIN  AS b ON a.office_id = b.office_id
+  JOIN attendances AS c ON b.user_id = c.user_id
+ WHERE a.office_id = 'IT001' AND b.user_id = 1;
+
+
+X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1))),
+                    Y(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1))),
+                    X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001'))),
+                    Y(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001')))
+
+SELECT a.office_name AS office, b.full_name AS employee,
+ CALL calc_distance(X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1))),
+                    Y(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = 1))),
+                    X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001'))),
+                    Y(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = 'IT001')))) AS distance_m
+ FROM offices AS a
+ JOIN all_users AS b ON a.office_id = b.office_id
+ JOIN attendances AS c ON b.user_id = c.user_id
+WHERE a.office_id = 'IT001' AND b.user_id = 1;
+
+DELIMITER //
+
+CREATE OR REPLACE PROCEDURE calc_distance(
+IN userid INT, IN officeid VARCHAR(20))
+BEGIN
+SELECT 
+   111111 *
+    DEGREES(ACOS(LEAST(1.0, COS(RADIANS(X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = officeid)))))
+         * COS(RADIANS(X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = userid)))))
+         * COS(RADIANS(Y(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = officeid))) - Y(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = userid)))))
+         + SIN(RADIANS(X(GeomFromWKB((SELECT office_location FROM offices WHERE office_id = officeid)))))
+         * SIN(RADIANS(X(GeomFromWKB((SELECT user_location FROM attendances WHERE user_id = userid)))))))) AS distance_in_m
+  FROM offices AS a
+  JOIN all_users AS b ON a.office_id = b.office_id
+  JOIN attendances AS c ON b.user_id = c.user_id
+ WHERE a.office_id = officeid AND b.user_id = userid;
+END; //
+DELIMITER ;
+
+CALL calc_distance(1,'IT001');
 
 SELECT X(GeomFromWKB((SELECT office_location FROM offices))) 'latitude',
 Y(GeomFromWKB((SELECT office_location FROM offices))) 'longitude';
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
---buat coba-coba tipe data point
-CREATE TABLE gis_point  (g POINT);
-SHOW FIELDS FROM gis_point;
-INSERT INTO gis_point VALUES
-    (PointFromText('POINT(15.317293 17.129387129)'));
-
-SELECT X(GeomFromWKB((SELECT g FROM gis_point))) 'longitude';
-SELECT Y(GeomFromWKB((SELECT g FROM gis_point))) 'latitude';
