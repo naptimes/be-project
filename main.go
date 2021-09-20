@@ -1,7 +1,7 @@
 package main
 
 import (
-	"be-project/handler"
+	"be-project/models"
 	"be-project/router"
 	"fmt"
 
@@ -18,7 +18,7 @@ func main() {
 		fmt.Println("Success")
 	}
 
-	var dashboard handler.Dashboard
+	var dashboard models.Dashboard
 	//var roles []handler.Role
 	err = db.Raw("SELECT full_name, role_description, office_longitude, office_latitude, dates, user_longitude, user_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard).Error
 	//err = db.Debug().Find(&roles).Error
