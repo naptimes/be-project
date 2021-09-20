@@ -9,10 +9,12 @@ import (
 func Router() {
 	router := gin.Default()
 
-	router.GET("/", handler.LandingPage)
-	router.GET("/dashboard", handler.GetDashboard)
-	router.GET("/timesheet", handler.GetTimesheet)
-	router.GET("/administration", handler.GetAdministration)
+	api := router.Group("/api")
+
+	api.GET("/", handler.LandingPage)
+	api.GET("/dashboard", handler.GetDashboard)
+	api.GET("/timesheet", handler.GetTimesheet)
+	api.GET("/administration", handler.GetAdministration)
 
 	router.Run()
 }
