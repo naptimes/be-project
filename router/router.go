@@ -15,6 +15,8 @@ func Router() {
 	api.GET("/dashboard", handler.GetDashboard)
 	api.GET("/timesheet", handler.GetTimesheet)
 	api.GET("/administration", handler.GetAdministration)
+	api.POST("/checkin", handler.PostCheckIn)
+	api.POST("/checkout", handler.PostCheckOut)
 
 	router.Run()
 }

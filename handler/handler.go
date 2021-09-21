@@ -47,3 +47,41 @@ func GetAdministration(c *gin.Context) {
 		"aku": "orang",
 	})
 }
+
+func PostCheckIn(c *gin.Context) {
+	var body models.Checking
+
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: http.StatusText(http.StatusBadRequest),
+			Data:    body,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.Respon{
+		Status:  http.StatusAccepted,
+		Message: http.StatusText(http.StatusAccepted),
+		Data:    body,
+	})
+}
+
+func PostCheckOut(c *gin.Context) {
+	var body models.Checking
+
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: http.StatusText(http.StatusBadRequest),
+			Data:    body,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.Respon{
+		Status:  http.StatusAccepted,
+		Message: http.StatusText(http.StatusAccepted),
+		Data:    body,
+	})
+}
