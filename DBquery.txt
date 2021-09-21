@@ -27,7 +27,7 @@ CREATE TABLE users(
 );
 
 CREATE TABLE attendances(
-   attendance_id INT PRIMARY KEY,
+   attendance_id INT AUTO_INCREMENT PRIMARY KEY,
    user_id INT NOT NULL,
    attendance_status BOOLEAN NOT NULL,
    checkin TIME NOT NULL,

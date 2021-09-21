@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"be-project/database"
 	"be-project/models"
 	"net/http"
 
@@ -21,8 +22,17 @@ func LandingPage(c *gin.Context) {
 
 func GetDashboard(c *gin.Context) {
 	// collect from db
-	data := &models.Respon{} // not yet
+	db := database.ConnectDB()
+	var dashboard models.Dashboard
 
+	// query for collecting /dashboard data
+	db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard)
+
+	data := &models.Respon{
+		Status:  http.StatusOK,
+		Message: http.StatusText(http.StatusOK),
+		Data:    dashboard,
+	}
 	c.JSON(http.StatusOK, data)
 }
 
