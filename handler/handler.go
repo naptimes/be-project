@@ -52,7 +52,7 @@ func PostCheckIn(c *gin.Context) {
 	// collect from db
 	db := database.ConnectDB()
 
-	var body models.Checking
+	var body models.Attendances
 
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, models.Respon{
@@ -64,7 +64,7 @@ func PostCheckIn(c *gin.Context) {
 	}
 
 	// db config for insert data here
-	if err := db.Raw("INSERT INTO attendances (user_latitude, user_longitude, dates) VALUES(%s, %s, %s);", body.UserLatitude, body.UserLongitude, body.CurrentDate); err != nil {
+	if err := db.Create(&body); err != nil {
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
 			Message: http.StatusText(http.StatusNotAcceptable),
@@ -84,7 +84,7 @@ func PostCheckOut(c *gin.Context) {
 	// collect from db
 	db := database.ConnectDB()
 
-	var body models.Checking
+	var body models.Attendances
 
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, models.Respon{
@@ -96,7 +96,7 @@ func PostCheckOut(c *gin.Context) {
 	}
 
 	// db config for insert data here
-	if err := db.Raw("INSERT INTO attendances (user_latitude, user_longitude, dates) VALUES(%s, %s, %s);", body.UserLatitude, body.UserLongitude, body.CurrentDate); err != nil {
+	if err := db.Create(&body); err != nil {
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
 			Message: http.StatusText(http.StatusNotAcceptable),
