@@ -70,6 +70,7 @@ func PostCheckIn(c *gin.Context) {
 			Message: http.StatusText(http.StatusNotAcceptable),
 			Data:    body,
 		})
+		return
 	}
 
 	c.JSON(http.StatusAccepted, models.Respon{
@@ -101,6 +102,7 @@ func PostCheckOut(c *gin.Context) {
 			Message: http.StatusText(http.StatusNotAcceptable),
 			Data:    body,
 		})
+		return
 	}
 
 	c.JSON(http.StatusAccepted, models.Respon{
