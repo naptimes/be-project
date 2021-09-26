@@ -3,6 +3,7 @@ package handler
 import (
 	"be-project/database"
 	"be-project/models"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,7 @@ func LandingPage(c *gin.Context) {
 }
 
 func GetDashboard(c *gin.Context) {
-	// collect from db
+	// connect to db
 	db := database.ConnectDB()
 	var dashboard models.Dashboard
 
@@ -49,10 +50,10 @@ func GetAdministration(c *gin.Context) {
 }
 
 func PostCheckIn(c *gin.Context) {
-	// collect from db
+	// connect to db
 	db := database.ConnectDB()
 
-	var body models.Attendances
+	var body models.Checking
 
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, models.Respon{
@@ -63,12 +64,23 @@ func PostCheckIn(c *gin.Context) {
 		return
 	}
 
-	// db config for insert data here
-	if err := db.Create(&body); err != nil {
+	// change template for allowing gorm to work
+	temp := &models.Attendances{
+		UserId:        body.UserId,
+		UserLatitude:  body.UserLatitude,
+		UserLongitude: body.UserLongitude,
+		CurrentDate:   body.CurrentDate,
+		CheckIn:       body.CurrentDate,
+		CheckOut:      "23:59:59",
+	}
+
+	// db config for insert data
+	if err := db.Create(&temp).Error; err != nil {
+		log.Fatal(err)
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
 			Message: http.StatusText(http.StatusNotAcceptable),
-			Data:    body,
+			Data:    temp,
 		})
 		return
 	}
@@ -76,15 +88,15 @@ func PostCheckIn(c *gin.Context) {
 	c.JSON(http.StatusAccepted, models.Respon{
 		Status:  http.StatusAccepted,
 		Message: http.StatusText(http.StatusAccepted),
-		Data:    body,
+		Data:    temp,
 	})
 }
 
 func PostCheckOut(c *gin.Context) {
-	// collect from db
+	// connect to db
 	db := database.ConnectDB()
 
-	var body models.Attendances
+	var body models.Checking
 
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, models.Respon{
@@ -95,8 +107,8 @@ func PostCheckOut(c *gin.Context) {
 		return
 	}
 
-	// db config for insert data here
-	if err := db.Create(&body); err != nil {
+	// db config for update column
+	if err := db.Exec("UPDATE attendances SET checkout = '" + body.CurrentDate + "' WHERE user_id = 1 AND dates = (SELECT MAX(dates) FROM attendances)").Error; err != nil {
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
 			Message: http.StatusText(http.StatusNotAcceptable),
