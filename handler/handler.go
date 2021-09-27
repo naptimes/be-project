@@ -196,3 +196,64 @@ func CalculateDistance(userLat, userLong, officeLat, officeLong float64) float64
 
 	return d
 }
+
+func Register(c *gin.Context) {
+	// connect to db
+	db := database.ConnectDB()
+	var body models.User
+
+	// JWT token func here
+
+	// password hashing here
+
+	// collect data from body
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: http.StatusText(http.StatusBadRequest),
+			Data:    body,
+		})
+		return
+	}
+
+	// insert new user information to db
+	if err := db.Create(&body).Error; err != nil {
+		c.JSON(http.StatusNotAcceptable, models.Respon{
+			Status:  http.StatusNotAcceptable,
+			Message: http.StatusText(http.StatusNotAcceptable),
+			Data:    body,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.Respon{
+		Status:  http.StatusAccepted,
+		Message: http.StatusText(http.StatusAccepted),
+		Data:    body,
+	})
+}
+
+func Login(c *gin.Context) {
+	// connect to db
+	db := database.ConnectDB()
+	var body models.User
+
+	// get auth token from header here
+
+	// check user information using email, password, and auth token
+	if err := db.First(&body).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: http.StatusText(http.StatusNotFound),
+			Data:    body,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.Respon{
+		Status:  http.StatusAccepted,
+		Message: http.StatusText(http.StatusAccepted),
+		Data:    body,
+	})
+
+}
