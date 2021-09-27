@@ -17,6 +17,8 @@ func Router() {
 	api.GET("/administration", handler.GetAdministration)
 	api.POST("/checkin", handler.PostCheckIn)
 	api.POST("/checkout", handler.PostCheckOut)
+	api.POST("/auth/register", handler.Register)
+	api.POST("/auth/login", handler.Login)
 
 	router.Run()
 }
