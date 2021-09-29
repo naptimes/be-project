@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -200,11 +201,9 @@ func CalculateDistance(userLat, userLong, officeLat, officeLong float64) float64
 func Register(c *gin.Context) {
 	// connect to db
 	db := database.ConnectDB()
-	var body models.User
+	var body models.Register
 
 	// JWT token func here
-
-	// password hashing here
 
 	// collect data from body
 	if err := c.ShouldBind(&body); err != nil {
@@ -216,12 +215,24 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// password hashing here
+	password, _ := bcrypt.GenerateFromPassword([]byte(body.Password), 14)
+
+	// change template
+	temp := &models.User{
+		FullName: body.FullName,
+		Email:    body.Email,
+		Password: password,
+		RoleID:   2,
+		OfficeID: "IT001",
+	}
+
 	// insert new user information to db
-	if err := db.Create(&body).Error; err != nil {
+	if err := db.Create(&temp).Error; err != nil {
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
 			Message: http.StatusText(http.StatusNotAcceptable),
-			Data:    body,
+			Data:    temp,
 		})
 		return
 	}
@@ -229,7 +240,7 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusAccepted, models.Respon{
 		Status:  http.StatusAccepted,
 		Message: http.StatusText(http.StatusAccepted),
-		Data:    body,
+		Data:    temp,
 	})
 }
 
