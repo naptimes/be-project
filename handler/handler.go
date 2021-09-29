@@ -40,9 +40,18 @@ func GetDashboard(c *gin.Context) {
 }
 
 func GetTimesheet(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"testing": 123,
-	})
+	// connect to db
+	db := database.ConnectDB()
+	var timesheet []models.Timesheet
+
+	db.Raw("SELECT a.dates, MIN(a.checkin) AS checkin, MAX(a.checkout) AS checkout, b.working_hours, b.attendance_status FROM attendances a JOIN work_hour b ON a.attendance_id = b.attendance_id WHERE a.user_id = 1 GROUP BY a.dates;").Scan(&timesheet)
+
+	data := &models.Respon{
+		Status:  http.StatusOK,
+		Message: http.StatusText(http.StatusOK),
+		Data:    timesheet,
+	}
+	c.JSON(http.StatusOK, data)
 }
 
 func GetAdministration(c *gin.Context) {
