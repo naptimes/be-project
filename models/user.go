@@ -1,15 +1,11 @@
 package models
 
 type User struct {
-	UserID      int
-	FullName    string
-	Email       string
-	Password    string
-	PhoneNumber string
-	OfficeID    string
-	RoleID      int
-	Latitude    float32
-	Longitude   float32
-	CurrentDate string
-	AuthToken   string
+	UserID    int    `json:"user_id"`
+	FullName  string `json:"full_name"`
+	Email     string `json:"email"`
+	Password  []byte `json:"password"`
+	OfficeID  string `json:"office_id"`
+	RoleID    int    `json:"role_id"`
+	AuthToken string `json:"auth_token"`
 }

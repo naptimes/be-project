@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -204,4 +205,75 @@ func CalculateDistance(userLat, userLong, officeLat, officeLong float64) float64
 	//fmt.Println("Distance:", d)
 
 	return d
+}
+
+func Register(c *gin.Context) {
+	// connect to db
+	db := database.ConnectDB()
+	var body models.Register
+
+	// JWT token func here
+
+	// collect data from body
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: http.StatusText(http.StatusBadRequest),
+			Data:    body,
+		})
+		return
+	}
+
+	// password hashing here
+	password, _ := bcrypt.GenerateFromPassword([]byte(body.Password), 14)
+
+	// change template
+	temp := &models.User{
+		FullName: body.FullName,
+		Email:    body.Email,
+		Password: password,
+		RoleID:   2,
+		OfficeID: "IT001",
+	}
+
+	// insert new user information to db
+	if err := db.Create(&temp).Error; err != nil {
+		c.JSON(http.StatusNotAcceptable, models.Respon{
+			Status:  http.StatusNotAcceptable,
+			Message: http.StatusText(http.StatusNotAcceptable),
+			Data:    temp,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.Respon{
+		Status:  http.StatusAccepted,
+		Message: http.StatusText(http.StatusAccepted),
+		Data:    temp,
+	})
+}
+
+func Login(c *gin.Context) {
+	// connect to db
+	db := database.ConnectDB()
+	var body models.User
+
+	// get auth token from header here
+
+	// check user information using email, password, and auth token
+	if err := db.First(&body).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: http.StatusText(http.StatusNotFound),
+			Data:    body,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.Respon{
+		Status:  http.StatusAccepted,
+		Message: http.StatusText(http.StatusAccepted),
+		Data:    body,
+	})
+
 }
