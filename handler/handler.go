@@ -3,10 +3,13 @@ package handler
 import (
 	"be-project/database"
 	"be-project/models"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -257,11 +260,21 @@ func Login(c *gin.Context) {
 	// connect to db
 	db := database.ConnectDB()
 	var body models.User
+	//var data map[string]string
 
 	// get auth token from header here
 
 	// check user information using email, password, and auth token
-	if err := db.First(&body).Error; err != nil {
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: http.StatusText(http.StatusBadRequest),
+			Data:    body,
+		})
+		return
+	}
+
+	if err := db.Where("email = ?", body.Email).First(&body).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: http.StatusText(http.StatusNotFound),
@@ -269,11 +282,43 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+	password, _ := bcrypt.GenerateFromPassword([]byte(body.Password), 14)
+
+	//pass := db.Select("password").Where("email = ?", body.Email).First(&body).Error
+	//pass := []byte(data[])
+	//bytes, _ := json.Marshal(pass)
+	//fmt.Println("password", bytes)
+
+	if err := bcrypt.CompareHashAndPassword([]byte(body.Password), []byte(password)); err != nil {
+		fmt.Println("pass1", password)
+		fmt.Println("pass2", body.Password)
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: http.StatusText(http.StatusBadRequest),
+			Data:    body,
+		})
+		return
+	}
+
+	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		Issuer:    body.Email,
+		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	token, err := claims.SignedString([]byte("secret"))
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusInternalServerError,
+			Message: http.StatusText(http.StatusInternalServerError),
+		})
+		return
+	}
 
 	c.JSON(http.StatusAccepted, models.Respon{
 		Status:  http.StatusAccepted,
 		Message: http.StatusText(http.StatusAccepted),
-		Data:    body,
+		Data:    token,
 	})
 
 }
