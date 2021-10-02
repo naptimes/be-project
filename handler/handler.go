@@ -3,7 +3,6 @@ package handler
 import (
 	"be-project/database"
 	"be-project/models"
-	"log"
 	"math"
 	"net/http"
 
@@ -29,7 +28,14 @@ func GetDashboard(c *gin.Context) {
 	var dashboard models.Dashboard
 
 	// query for collecting /dashboard data
-	db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard)
+	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: err.Error(),
+			Data:    dashboard,
+		})
+		return
+	}
 
 	data := &models.Respon{
 		Status:  http.StatusOK,
@@ -44,7 +50,14 @@ func GetTimesheet(c *gin.Context) {
 	db := database.ConnectDB()
 	var timesheet []models.Timesheet
 
-	db.Raw("SELECT a.dates, MIN(a.checkin) AS checkin, MAX(a.checkout) AS checkout, b.working_hours, b.attendance_status FROM attendances a JOIN work_hour b ON a.attendance_id = b.attendance_id WHERE a.user_id = 1 GROUP BY a.dates;").Scan(&timesheet)
+	if err := db.Raw("SELECT a.dates, MIN(a.checkin) AS checkin, MAX(a.checkout) AS checkout, b.working_hours, b.attendance_status FROM attendances a JOIN work_hour b ON a.attendance_id = b.attendance_id WHERE a.user_id = 1 GROUP BY a.dates;").Scan(&timesheet).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: err.Error(),
+			Data:    timesheet,
+		})
+		return
+	}
 
 	data := &models.Respon{
 		Status:  http.StatusOK,
@@ -68,7 +81,14 @@ func PostCheckIn(c *gin.Context) {
 	var dashboard models.Dashboard
 
 	// query for collecting /dashboard data
-	db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard)
+	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: err.Error(),
+			Data:    dashboard,
+		})
+		return
+	}
 
 	officeLat := dashboard.OfficeLatitude
 	officeLong := dashboard.OfficeLongitude
@@ -104,10 +124,10 @@ func PostCheckIn(c *gin.Context) {
 
 	// db config for insert data
 	if err := db.Create(&temp).Error; err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
-			Message: http.StatusText(http.StatusNotAcceptable),
+			Message: err.Error(),
 			Data:    temp,
 		})
 		return
@@ -130,7 +150,7 @@ func PostCheckOut(c *gin.Context) {
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, models.Respon{
 			Status:  http.StatusBadRequest,
-			Message: http.StatusText(http.StatusBadRequest),
+			Message: err.Error(),
 			Data:    body,
 		})
 		return
@@ -144,7 +164,14 @@ func PostCheckOut(c *gin.Context) {
 	}
 
 	// query for collecting data
-	db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard)
+	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
 
 	officeLat := dashboard.OfficeLatitude
 	officeLong := dashboard.OfficeLongitude
@@ -169,7 +196,7 @@ func PostCheckOut(c *gin.Context) {
 	if err := db.Exec("UPDATE attendances SET checkout = '" + body.CurrentDate + "' WHERE user_id = 1 AND dates = (SELECT MAX(dates) FROM attendances)").Error; err != nil {
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
-			Message: http.StatusText(http.StatusNotAcceptable),
+			Message: err.Error(),
 			Data:    body,
 		})
 		return
@@ -218,7 +245,7 @@ func Register(c *gin.Context) {
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, models.Respon{
 			Status:  http.StatusBadRequest,
-			Message: http.StatusText(http.StatusBadRequest),
+			Message: err.Error(),
 			Data:    body,
 		})
 		return
@@ -240,7 +267,7 @@ func Register(c *gin.Context) {
 	if err := db.Create(&temp).Error; err != nil {
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
-			Message: http.StatusText(http.StatusNotAcceptable),
+			Message: err.Error(),
 			Data:    temp,
 		})
 		return
@@ -256,15 +283,36 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	// connect to db
 	db := database.ConnectDB()
-	var body models.User
+	var body models.Login
+	// var catch models.User
+	var user models.User
+
+	// collect data from body
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
 
 	// get auth token from header here
 
 	// check user information using email, password, and auth token
-	if err := db.First(&body).Error; err != nil {
+	if err := db.Where("email = ?", body.Email).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
-			Message: http.StatusText(http.StatusNotFound),
+			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(body.Password)); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
 			Data:    body,
 		})
 		return
