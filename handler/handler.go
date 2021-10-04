@@ -3,9 +3,13 @@ package handler
 import (
 	"be-project/database"
 	"be-project/models"
+	"fmt"
 	"math"
 	"net/http"
+	"strconv"
+	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,6 +20,7 @@ const (
 	ContentTypeJSON   = "application/json"
 	ContentTypeHTML   = "text/html; charset=utf-8"
 	ContentTypeText   = "text/plain; charset=utf-8"
+	jwtSecretKey      = "sangat-Rahasia!@#987"
 )
 
 func LandingPage(c *gin.Context) {
@@ -299,7 +304,7 @@ func Login(c *gin.Context) {
 
 	// get auth token from header here
 
-	// check user information using email, password, and auth token
+	// check user information using email, password
 	if err := db.Where("email = ?", body.Email).First(&user).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
@@ -318,10 +323,47 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusAccepted, models.Respon{
-		Status:  http.StatusAccepted,
-		Message: http.StatusText(http.StatusAccepted),
-		Data:    body,
+	sign := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), jwt.StandardClaims{
+		Issuer:    strconv.Itoa(user.UserID),
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 7).Unix(), // a week
 	})
 
+	token, err := sign.SignedString([]byte(jwtSecretKey))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.Respon{
+			Status:  http.StatusInternalServerError,
+			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
+
+	c.SetCookie("jwt", token, 86400, "", "", false, false)
+
+	c.JSON(http.StatusOK, models.Respon{
+		Status:  http.StatusOK,
+		Message: http.StatusText(http.StatusOK),
+	})
+}
+
+// func for authenticate user
+func Auth(c *gin.Context) {
+	tokenString := c.Request.Header.Get("Authorization")
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if jwt.GetSigningMethod("HS256") != token.Method {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(jwtSecretKey), nil
+	})
+
+	if token != nil && err == nil {
+		fmt.Println("token verified")
+	} else {
+		c.JSON(http.StatusUnauthorized, models.Respon{
+			Status:  http.StatusUnauthorized,
+			Message: err.Error(),
+		})
+		c.Abort()
+	}
 }
