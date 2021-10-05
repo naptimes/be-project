@@ -13,12 +13,12 @@ func Router() {
 
 	api := router.Group("/api")
 
-	api.GET("/", handler.LandingPage)
-	api.GET("/dashboard", handler.GetDashboard)
-	api.GET("/timesheet", handler.GetTimesheet)
-	api.GET("/administration", handler.GetAdministration)
-	api.POST("/checkin", handler.PostCheckIn)
-	api.POST("/checkout", handler.PostCheckOut)
+	api.GET("/", handler.Auth, handler.LandingPage)
+	api.GET("/dashboard", handler.Auth, handler.GetDashboard)
+	api.GET("/timesheet", handler.Auth, handler.GetTimesheet)
+	api.GET("/administration", handler.Auth, handler.GetAdministration)
+	api.POST("/checkin", handler.Auth, handler.PostCheckIn)
+	api.POST("/checkout", handler.Auth, handler.PostCheckOut)
 	api.POST("/auth/register", handler.Register)
 	api.POST("/auth/login", handler.Login)
 
@@ -33,5 +33,6 @@ func Router() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+
 	router.Run()
 }
