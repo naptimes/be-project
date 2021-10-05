@@ -73,8 +73,53 @@ func GetTimesheet(c *gin.Context) {
 }
 
 func GetAdministration(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"aku": "orang",
+	db := database.ConnectDB()
+	var userlist []models.Users
+
+	if err := db.Select("user_id", "full_name", "email", "approval_status").Where("role_id = 2").Find(&userlist).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: err.Error(),
+			Data:    userlist,
+		})
+		return
+	}
+
+	data := &models.Respon{
+		Status:  http.StatusOK,
+		Message: http.StatusText(http.StatusOK),
+		Data:    userlist,
+	}
+	c.JSON(http.StatusOK, data)
+}
+
+func ApproveUser(c *gin.Context) {
+	db := database.ConnectDB()
+	var body models.Users
+
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
+
+	//for updating the user email activation
+	if err := db.Exec("UPDATE users SET approval_status = '1' WHERE email = '" + body.Email + "'").Error; err != nil {
+		c.JSON(http.StatusNotAcceptable, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.Respon{
+		Status:  http.StatusAccepted,
+		Message: http.StatusText(http.StatusAccepted),
+		Data:    body,
 	})
 }
 
@@ -261,11 +306,12 @@ func Register(c *gin.Context) {
 
 	// change template
 	temp := &models.User{
-		FullName: body.FullName,
-		Email:    body.Email,
-		Password: password,
-		RoleID:   2,
-		OfficeID: "IT001",
+		FullName:       body.FullName,
+		Email:          body.Email,
+		Password:       password,
+		RoleID:         2,
+		OfficeID:       "IT001",
+		ApprovalStatus: false,
 	}
 
 	// insert new user information to db
@@ -318,6 +364,15 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Respon{
 			Status:  http.StatusBadRequest,
 			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
+
+	if user.ApprovalStatus == false {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: "This email is not approved yet!",
 			Data:    body,
 		})
 		return
