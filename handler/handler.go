@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,6 +23,8 @@ const (
 	jwtSecretKey      = "sangat-Rahasia!@#987"
 )
 
+var passClaims *jwt.StandardClaims
+
 func LandingPage(c *gin.Context) {
 	c.Data(http.StatusOK, ContentTypeHTML, []byte("<h1>ini landing page</h1>"))
 }
@@ -31,9 +33,10 @@ func GetDashboard(c *gin.Context) {
 	// connect to db
 	db := database.ConnectDB()
 	var dashboard models.Dashboard
+	cookie := passClaims
 
 	// query for collecting /dashboard data
-	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard).Error; err != nil {
+	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id WHERE a.user_id = " + cookie.Issuer + " LIMIT 1;").Scan(&dashboard).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: err.Error(),
@@ -54,8 +57,9 @@ func GetTimesheet(c *gin.Context) {
 	// connect to db
 	db := database.ConnectDB()
 	var timesheet []models.Timesheet
+	cookie := passClaims
 
-	if err := db.Raw("SELECT a.dates, MIN(a.checkin) AS checkin, MAX(a.checkout) AS checkout, b.working_hours, b.attendance_status FROM attendances a JOIN work_hour b ON a.attendance_id = b.attendance_id WHERE a.user_id = 1 GROUP BY a.dates;").Scan(&timesheet).Error; err != nil {
+	if err := db.Raw("SELECT a.dates, MIN(a.checkin) AS checkin, MAX(a.checkout) AS checkout, b.working_hours, b.attendance_status FROM attendances a JOIN work_hour b ON a.attendance_id = b.attendance_id WHERE a.user_id = " + cookie.Issuer + " GROUP BY a.dates;").Scan(&timesheet).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: err.Error(),
@@ -84,9 +88,10 @@ func PostCheckIn(c *gin.Context) {
 
 	var body models.Checking
 	var dashboard models.Dashboard
+	cookie := passClaims
 
 	// query for collecting /dashboard data
-	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard).Error; err != nil {
+	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id WHERE a.user_id = " + cookie.Issuer + " LIMIT 1;").Scan(&dashboard).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: err.Error(),
@@ -107,9 +112,11 @@ func PostCheckIn(c *gin.Context) {
 		return
 	}
 
+	id, _ := strconv.Atoi(cookie.Issuer)
+
 	// change template for allowing gorm to work
 	temp := &models.Attendances{
-		UserId:        1,
+		UserId:        id,
 		UserLatitude:  body.UserLatitude,
 		UserLongitude: body.UserLongitude,
 		CurrentDate:   body.CurrentDate,
@@ -151,6 +158,7 @@ func PostCheckOut(c *gin.Context) {
 
 	var body models.Checking
 	var dashboard models.Dashboard
+	cookie := passClaims
 
 	if err := c.ShouldBind(&body); err != nil {
 		c.JSON(http.StatusBadRequest, models.Respon{
@@ -161,15 +169,17 @@ func PostCheckOut(c *gin.Context) {
 		return
 	}
 
+	id, _ := strconv.Atoi(cookie.Issuer)
+
 	temp := &models.Checking{
-		UserId:        1,
+		UserId:        id,
 		UserLatitude:  body.UserLatitude,
 		UserLongitude: body.UserLongitude,
 		CurrentDate:   body.CurrentDate,
 	}
 
 	// query for collecting data
-	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id JOIN attendances AS d ON a.user_id = d.user_id WHERE a.user_id = 1 ORDER BY d.dates DESC LIMIT 1;").Scan(&dashboard).Error; err != nil {
+	if err := db.Raw("SELECT full_name, role_description, office_longitude, office_latitude FROM users AS a JOIN roles AS b ON a.role_id = b.role_id JOIN offices AS c ON a.office_id = c.office_id WHERE a.user_id = " + cookie.Issuer + " LIMIT 1;").Scan(&dashboard).Error; err != nil {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: err.Error(),
@@ -198,7 +208,7 @@ func PostCheckOut(c *gin.Context) {
 	}
 
 	// db config for update column
-	if err := db.Exec("UPDATE attendances SET checkout = '" + body.CurrentDate + "' WHERE user_id = 1 AND dates = (SELECT MAX(dates) FROM attendances)").Error; err != nil {
+	if err := db.Exec("UPDATE attendances SET checkout = '" + body.CurrentDate + "' WHERE user_id = " + cookie.Issuer + " AND dates = (SELECT MAX(dates) FROM attendances)").Error; err != nil {
 		c.JSON(http.StatusNotAcceptable, models.Respon{
 			Status:  http.StatusNotAcceptable,
 			Message: err.Error(),
@@ -349,8 +359,15 @@ func Login(c *gin.Context) {
 
 // func for authenticate user
 func Auth(c *gin.Context) {
-	tokenString := c.Request.Header.Get("Authorization")
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	cookie, err := c.Cookie("jwt")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.Respon{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
+		return
+	}
+	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if jwt.GetSigningMethod("HS256") != token.Method {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -358,12 +375,14 @@ func Auth(c *gin.Context) {
 	})
 
 	if token != nil && err == nil {
-		fmt.Println("token verified")
+		claims := token.Claims.(*jwt.StandardClaims)
+		passClaims = claims
 	} else {
 		c.JSON(http.StatusUnauthorized, models.Respon{
 			Status:  http.StatusUnauthorized,
 			Message: err.Error(),
 		})
 		c.Abort()
+		return
 	}
 }
