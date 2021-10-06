@@ -97,6 +97,27 @@ func GetAdministration(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
+func GetUsersAttendances(c *gin.Context) {
+	db := database.ConnectDB()
+	var userlist []models.Users
+
+	if err := db.Raw("SELECT c.user_id, a.full_name, a.email, COUNT(DISTINCT c.dates) Absen FROM users a JOIN attendances b ON a.user_id = b.user_id JOIN work_hour c ON b.attendance_id = c.attendance_id WHERE attendance_status = 0 GROUP BY user_id;").Scan(&userlist).Error; err != nil {
+		c.JSON(http.StatusNotFound, models.Respon{
+			Status:  http.StatusNotFound,
+			Message: err.Error(),
+			Data:    userlist,
+		})
+		return
+	}
+
+	data := &models.Respon{
+		Status:  http.StatusOK,
+		Message: http.StatusText(http.StatusOK),
+		Data:    userlist,
+	}
+	c.JSON(http.StatusOK, data)
+}
+
 func ApproveUser(c *gin.Context) {
 	db := database.ConnectDB()
 	var body models.Users
