@@ -374,7 +374,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Respon{
 			Status:  http.StatusBadRequest,
 			Message: err.Error(),
-			Data:    body,
 		})
 		return
 	}
@@ -386,7 +385,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: err.Error(),
-			Data:    body,
 		})
 		return
 	}
@@ -395,7 +393,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.Respon{
 			Status:  http.StatusBadRequest,
 			Message: err.Error(),
-			Data:    body,
 		})
 		return
 	}
@@ -404,7 +401,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: "This email is not approved yet!",
-			Data:    body,
 		})
 		return
 	}
@@ -420,7 +416,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, models.Respon{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
-			Data:    body,
 		})
 		return
 	}
@@ -428,15 +423,15 @@ func Login(c *gin.Context) {
 	c.SetCookie("jwt", token, 86400, "", "", false, false)
 
 	// pass role_id to respons
+	var temp string
 	if user.RoleID == 1 {
-		body.RoleId = "Admin"
+		temp = "Admin"
 	} else if user.RoleID == 2 {
-		body.RoleId = "Employee"
+		temp = "Employee"
 	} else {
 		c.JSON(http.StatusInternalServerError, models.Respon{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
-			Data:    body,
 		})
 		return
 	}
@@ -444,7 +439,10 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, models.Respon{
 		Status:  http.StatusOK,
 		Message: http.StatusText(http.StatusOK),
-		Data:    body,
+		Data: &models.LoginRespons{
+			Email:  body.Email,
+			RoleId: temp,
+		},
 	})
 }
 
