@@ -379,7 +379,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if user.ApprovalStatus == false {
+	if !user.ApprovalStatus {
 		c.JSON(http.StatusNotFound, models.Respon{
 			Status:  http.StatusNotFound,
 			Message: "This email is not approved yet!",
@@ -406,9 +406,24 @@ func Login(c *gin.Context) {
 
 	c.SetCookie("jwt", token, 86400, "", "", false, false)
 
+	// pass role_id to respons
+	if user.RoleID == 1 {
+		body.RoleId = "Admin"
+	} else if user.RoleID == 2 {
+		body.RoleId = "Employee"
+	} else {
+		c.JSON(http.StatusInternalServerError, models.Respon{
+			Status:  http.StatusInternalServerError,
+			Message: err.Error(),
+			Data:    body,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, models.Respon{
 		Status:  http.StatusOK,
 		Message: http.StatusText(http.StatusOK),
+		Data:    body,
 	})
 }
 
