@@ -21,7 +21,7 @@ func Router() {
 	api.POST("/auth/register", handler.Register)
 	api.POST("/auth/login", handler.Login)
 
-	api.Use(CORSMiddleware())
+	router.Use(CORSMiddleware())
 	router.Run()
 }
 
