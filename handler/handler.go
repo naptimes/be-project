@@ -407,15 +407,19 @@ func Login(c *gin.Context) {
 	c.SetCookie("jwt", token, 86400, "", "", false, false)
 
 	// pass role_id to respons
+	var temp string
 	if user.RoleID == 1 {
-		body.RoleId = "Admin"
+		temp = "Admin"
 	} else if user.RoleID == 2 {
-		body.RoleId = "Employee"
+		temp = "Employee"
 	} else {
 		c.JSON(http.StatusInternalServerError, models.Respon{
 			Status:  http.StatusInternalServerError,
 			Message: err.Error(),
-			Data:    body,
+			Data: &models.LoginRespons{
+				Email:  body.Email,
+				RoleId: temp,
+			},
 		})
 		return
 	}
