@@ -25,11 +25,13 @@ func Router() {
 	api.POST("/auth/login", handler.Login)
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST", "DELETE", "OPTION"},
-		AllowHeaders:     []string{"Access-Control-Allow-Headers ,Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+		//AllowOrigins:     []string{"*"},
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"PUT", "PATCH", "GET", "POST", "DELETE", "OPTION"},
+		AllowHeaders:    []string{"*"},
+		// AllowHeaders:     []string{"Access-Control-Allow-Headers ,Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"},
+		ExposeHeaders:    []string{"*"},
+		AllowCredentials: false,
 		MaxAge:           12 * time.Hour,
 	}))
 	router.Run()
